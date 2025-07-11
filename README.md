@@ -110,6 +110,22 @@ sudo apt install mysql-client
 <br>
 <br>
 
+## AI활용 변인통제
+| 설정 항목 | 설명 | 실험 시 권장 설정 | 비고|
+|-----------|------|------------------|----------------|
+| `query_cache_type` | 쿼리 결과를 캐시해서 재사용 | `OFF` | Mysql 0.8.x버젼부터 사용 안함 |
+| `query_cache_size` | 쿼리 캐시 크기 | `0` | Mysql 0.8.x버젼부터 사용 안함 |
+| `innodb_stats_on_metadata` | 테이블 정보를 조회할 때마다 통계 재계산 | `OFF` | Mysql 0.8.x버젼부터 사용 안함 |
+| `FLUSH TABLES` | 테이블을 닫고 캐시된 데이터를 디스크에 저장 | `` | |
+
+#### ✅ 설정 확인
+```sql
+SHOW VARIABLES LIKE 'query_cache%';
+SHOW VARIABLES LIKE 'innodb_stats_on_metadata';
+SHOW VARIABLES LIKE 'performance_schema';
+```
+
+
 #### 파티셔닝 전  : 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
   <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
 
@@ -143,31 +159,8 @@ sudo apt install mysql-client
   </details>
 
 ---
-## ❓ 실험 환경 통제를 위한 질문 & 답변 (Troubleshooting 기록)
-
-### Q1. 성능 비교 실험을 하기 전, 가장 먼저 해야 할 일은?
-
-> **A. MySQL 서버의 설정(서버 변수)을 확인하고 통제하는 것이 첫 단계입니다.**  
-> 실험 결과가 정확하고 반복 가능하려면, 쿼리 캐시나 자동 최적화 같은 기능이 개입하지 않도록 설정을 통제해야 합니다.
 
 
-### Q2. 어떤 설정을 조정해야 하나요?
-
-| 설정 항목 | 설명 | 실험 시 권장 설정 |
-|-----------|------|------------------|
-| `query_cache_type` | 쿼리 결과를 캐시해서 재사용 | `OFF` |
-| `query_cache_size` | 쿼리 캐시 크기 | `0` |
-| `innodb_stats_on_metadata` | 테이블 정보를 조회할 때마다 통계 재계산 | `OFF` |
-| `performance_schema` | 성능 수집 기능, 오버헤드 발생 가능 | `OFF (선택)` |
-
-### Q3. 실제 설정을 어떻게 확인하고 조정하나요?
-
-#### ✅ 설정 확인
-```sql
-SHOW VARIABLES LIKE 'query_cache%';
-SHOW VARIABLES LIKE 'innodb_stats_on_metadata';
-SHOW VARIABLES LIKE 'performance_schema';
-```
 ---
 
 ### 🔸 트러블슈팅
