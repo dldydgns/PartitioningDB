@@ -118,6 +118,29 @@ mysqlslap은 동시 접속과 반복 실행을 통한 부하 테스트가 가능
 
 <br>
 
+<strong>📍Trouble Shooting #3 </strong><br>
+
+🤔 문제<br>
+mysqlslap 접속 에러
+
+  ```bash
+   mysqlslap: Error when connecting to server:
+    Access denied for user 'root'@'localhost'</code>
+  ```
+
+💡 원인<br>
+- `root@localhost` 계정이 비밀번호 인증 방식이 아닌 `auth_socket` 방식으로 설정되어 있는 경우, 
+  `mysqlslap`과 같은 외부 툴에서 로그인 불가
+
+✅ 해결  
+MySQL에 root 계정으로 접속 후 인증 방식을 비밀번호 방식으로 변경<br>
+```bash
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '원하는비밀번호';
+FLUSH PRIVILEGES;
+```
+
+<br>
+
 ## 3️⃣ 파티셔닝 옵션별 테스트
 테스트를 진행하기 전
 성능 테스트의 신뢰성을 높이기 위해, **AI를 활용해 MySQL 환경 설정을 분석·적용**하였습니다.
@@ -137,6 +160,9 @@ Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 �
 -> 따라서 'FLUSH TABLES' 설정만 적용했다.
 
 #### 📌 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
+
+예상결과: movieId 기준으로 Partitioning을 했을 때만 성능향상, rating과 userId로 Partitioning을 했을 때는 오히려 성능 감소
+
 
 - **파티셔닝 전**
   <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
@@ -192,20 +218,9 @@ Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 �
     );
     
     ```
-    
     <img width="1589" height="198" alt="image" src="https://github.com/user-attachments/assets/f454d41a-5d70-4347-bcbe-8388014dff94" />
 
-# 파티셔닝별 쿼리 성능 테스트 결과 및 분석
-
-## 1. 실험 목적
-
-- **movieId 값을 기준으로 rating 값의 평균을 조회**하는 쿼리에서  
-  파티셔닝 전/후 및 파티셔닝 키별로 성능 차이를 비교하고,  
-  각 방식의 예상과 실제 결과를 분석한다.
-
----
-
-## 2. 테스트 결과 요약
+- 테스트 결과 요약
 
 | 테스트 케이스            | 평균 실행 시간(초) | 최소(초) | 최대(초) | 비고                      |
 |-------------------------|-------------------|----------|----------|---------------------------|
@@ -214,76 +229,9 @@ Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 �
 | userId 해시 파티셔닝    | 12.138            | 11.407   | 12.324   | 프루닝 불가, 개선 제한적  |
 | rating RANGE 파티셔닝   | 11.531            | 11.466   | 11.685   | 데이터 불균형, 개선 제한적|
 
----
+-> movieId 파티셔닝이 가장 빠르긴 하지만, 예상했던 userId와 rating 파티셔닝의 성능 저하가 나타나지 않았다.
+원인이 뭘까?
 
-## 3. 예상 결과 vs 실제 결과
-
-### (1) 파티셔닝 전 (기준값)
-- **예상:** 인덱스 기반 단일 테이블로, 대용량 데이터에서 쿼리 성능이 가장 느릴 것으로 예상.
-- **실제:** 평균 28.466초로, 모든 파티셔닝 방식 중 가장 느림.
-
-### (2) movieId 해시 파티셔닝
-- **예상:** movieId로 해시 파티셔닝 시, movieId 조건이 파티션 키와 일치하므로 파티션 프루닝이 강하게 작동해 성능이 크게 개선될 것으로 기대.
-- **실제:** 평균 0.599초로, **파티셔닝 전 대비 47배 이상** 빠름.  
-  - 파티션 프루닝이 정확하게 동작하여, 해당 movieId가 속한 파티션만 빠르게 조회함.
-  - 예상과 일치하며, 단일 값 조회에서 해시 파티셔닝의 효과가 극대화됨.
-
-### (3) userId 해시 파티셔닝
-- **예상:** movieId 기준 조회 시 userId 파티셔닝은 효과가 거의 없고, 오히려 파티션 관리 오버헤드로 인해 성능이 저하될 수 있음.
-- **실제:** 평균 12.138초로, 파티셔닝 전보다는 빠르지만 movieId 해시 파티셔닝보다는 현저히 느림.
-  - 파티션 키와 쿼리 조건이 일치하지 않아 모든 파티션을 스캔해야 하므로 프루닝 효과가 없음.
-  - 예상과 일치하게, 파티션 관리 오버헤드만 증가.
-
-### (4) rating RANGE 파티셔닝
-- **예상:** rating 값 구간별로 파티셔닝하였으나, movieId로 조회할 때는 파티션 프루닝이 제대로 동작하지 않아 성능 개선 효과가 제한적일 것으로 예상.
-- **실제:** 평균 11.531초로, userId 해시 파티셔닝과 비슷하게 개선은 되었으나 movieId 해시 파티셔닝만큼 빠르지 않음.
-  - rating 파티션에 데이터가 불균형하게 분포되어 있고, movieId 조건이 파티션 키와 무관해 모든 파티션을 스캔.
-  - 예상과 일치하며, 인덱스 효율도 저하됨.
-
----
-
-## 4. 결과 해석 및 결론
-
-- **movieId 해시 파티셔닝**이 쿼리 조건(movieId)와 파티션 키가 일치할 때,  
-  파티션 프루닝 효과로 인해 성능이 압도적으로 개선됨(수십 배 이상).
-- **userId 해시, rating RANGE 파티셔닝**은 쿼리 조건과 파티션 키가 일치하지 않아  
-  모든 파티션을 스캔하게 되고, 성능 개선 효과가 제한적임.
-- **파티셔닝 전**에는 대용량 데이터 전체를 스캔해야 하므로 가장 느림.
-
-### 실전 조언
-
-- **파티셔닝 효과는 쿼리의 WHERE 조건과 파티션 키가 일치할 때 극대화**됨.
-- 실제 운영 환경에서는 쿼리 패턴을 고려한 파티션 키 선정이 매우 중요함.
-- 데이터 분포와 쿼리 패턴을 분석하여, 파티셔닝 전략을 설계해야 한다.
-
-
----
-
-### 🔸 트러블슈팅
-
-### ❌ mysqlslap 접속 에러
-
-- **❗에러 메시지**
-  ```bash
-   mysqlslap: Error when connecting to server:
-    Access denied for user 'root'@'localhost'</code>
-  ```
-- **원인**
-- `root@localhost` 계정이 비밀번호 인증 방식이 아닌 `auth_socket` 방식으로 설정되어 있는 경우, 
-  `mysqlslap`과 같은 외부 툴에서 로그인 불가
-
-- **확인 방법**
-```bash
-sudo mysql
-SELECT user, host, plugin FROM mysql.user WHERE user = 'root';
-```
-
-- **해결 방법** <br>
-MySQL에 root 계정으로 접속 후 인증 방식을 비밀번호 방식으로 변경<br>
-```bash
-ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '원하는비밀번호';
-FLUSH PRIVILEGES;
-```
 ---
 
 ### 📌 결론 및 회고
