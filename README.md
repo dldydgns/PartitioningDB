@@ -63,29 +63,11 @@ MovieReview Dataset (https://grouplens.org/datasets/movielens/)
 mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
 ```
 ---
-## 1️⃣ MySQL에 csv 파일 업로드하기
+## :one: MySQL에 csv 파일 업로드하기
 <!-- [추가] - DBeaver 활용하여 csv 자동 임포트 가능, CSV파일 import시 자동 테이블 생성 기능을 활용하려 하였지만 자동으로 인지한 속성이 부정확하여 에러 발생, 테이블 직접 생성 및 매핑으로 해결 -->
-###  DBeaver 활용하여 csv 자동 임포트 기능 활용
-<details>
-<summary>DBeaver에서 MySQL 타입의 movieLens 데이터베이스 생성</summary>
-
-DBeaver에서 MySQL 데이터베이스를 생성한 후, 아래와 같이 진행했습니다.
-
-<img width="651" height="426" alt="image" src="https://github.com/user-attachments/assets/3b486dc8-4631-469c-a555-6fe0f69e9bce" />
-
-Import source에서 다운받은 데이터셋 csv파일을 적재(Encoding - utf-8 확인)
-
-<img width="550" height="350" alt="image" src="https://github.com/user-attachments/assets/1b92c8fb-4054-44d0-acd7-bea92ecbb196" />
-
-Tables mapping에서 데이터 타입을 확인할 수 있지만, **수정은 불가능**한 문제가 발생
-
-<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/561553d1-0fac-4b69-a42e-eede397d0d4e" />
-
-</details>
-
 <strong>📍Trouble Shooting #1 </strong><br>
 <br>
-<strong>🤔 문제 </strong><br>
+<strong> 🤔 문제 </strong><br>
 <br>
 데이터셋 improt 하면서 오류 발생 <br>
 <br>
@@ -93,14 +75,30 @@ Tables mapping에서 데이터 타입을 확인할 수 있지만, **수정은 �
 <br>
 <br>
 💡 원인<br>
-특정 컬럼에서 데이터 크기 타입이 작아서 문제 발생
+Vachar(50)인 genres와 timestamp의 데이터가 테이블의 제약조건보다 길이가 길어 오류 발생
+<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/561553d1-0fac-4b69-a42e-eede397d0d4e" /><br>
 
-✅ 해결<br>
-CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼만 포함하고, 각 컬럼의 크기 타입을 명확히 지정하기로 결정함
-필요한 컬럼과 컬럼 타입을 지정할수있음
-links 테이블은 외부 링크와 연결되는 테이블이므로 불필요해서 삭제
+✅해결<br>
+CSV를 임포트 하면서 데이터 크기 제약조건을 50 -> 500으로 변경하여 데이터 불러오는 데 성공 <!-- 왜 500으로? -->
 
-[추가] - 가공되지 않은 데이터가 너무 많아 불필요한 대기시간이 길었다, 영화 id값을 기준으로 1000이상은 모두 제거하였다. (약 2300만->620만개의 리뷰 데이터) 
+<br>
+
+📍 Trouble Shooting #2
+
+🤔문제  
+파티셔닝 테이블로 데이터를 로딩할 때 **30분 이상 지연되는 현상 발생**
+
+💡 원인  
+초기에는 **가공되지 않은 전체 리뷰 데이터(약 2,300만 건)** 를 그대로 불러오고 있었다.  
+파티셔닝 작업은 테이블 구조 변경뿐 아니라 **데이터 분할 작업이 동반되기 때문에**,  
+데이터 양이 많을수록 **파티션 생성 및 데이터 삽입 시 오버헤드가 매우 크다.**
+
+✅ 해결  
+실험 효율성과 파티셔닝 성능 측정을 위해 **데이터량을 1,000만 건 이하**로 제한하고자 했었다.
+따라서 movieId가 1000 이상인 영화의 리뷰는 제외하여
+영화 종류를 줄이고, 데이터 양도 **약 2,300만 건 → 620만 건**으로 축소했다.
+이로 인해 데이터 로딩 시간이 **30분 이상 → 약 5분**으로 크게 단축되었고,
+보다 안정적인 환경에서 실험을 진행할 수 있었다.
 
 <br>
 
@@ -113,32 +111,22 @@ sudo apt update
 sudo apt install mysql-client
 ```
 
-<details>
-<summary> 💡 mysqlslab 설치 이유 </summary>
-  
-**mysqlslap** 은 MySQL 서버의 쿼리 성능을 실제 운영 환경처럼 동시 접속·반복 실행으로 측정하는 공식 벤치마크 도구. <br>
-**동시성 부하 테스트** 동일한 쿼리를 파티셔닝 전후/방식별로 반복 실행하여, <br>
-평균/최소/최대 쿼리, 실행 시간, 동시성별 처리량 등을 객관적인 수치로 결과를 기록·비교할 수 있기 때문에 선정했습니다.
-</details>
+💡 mysqlslab 설치 이유<br>
+단순 조회 1회의 속도보다, **가상의 사용자가 동일한 쿼리를 반복 실행하는 상황에서의 평균 성능을 측정**하고자 하였다.
+mysqlslap은 동시 접속과 반복 실행을 통한 부하 테스트가 가능하여,
+파티셔닝 전후 또는 방식별 쿼리 성능을 객관적으로 비교하기 위한 벤치마크 도구로 적합하다고 판단했다.
 
-## 3️⃣ 파티셔닝 경우의 수 실험
-
-<strong>📍Trouble Shooting #2 </strong><br>
-<br>
-<strong>🤔 문제 </strong><br>
-<br>
-데이터가 너무 커서 
-모든 테이블을 join 후 파티셔닝을 진행하려 했지만 데이터의 크기가 커서 시간이 너무 오래걸림<br>
-<br>
-<br>
-💡 원인<br>
-
-
-✅ 해결<br>
-<br>
 <br>
 
-## AI활용 변인통제
+## 3️⃣ 파티셔닝 옵션별 테스트
+테스트를 진행하기 전
+성능 테스트의 신뢰성을 높이기 위해, **AI를 활용해 MySQL 환경 설정을 분석·적용**하였습니다.
+특히 쿼리 캐시나 메타데이터 통계처럼 **결과에 영향을 줄 수 있는 요소들을 통제**해
+실험 간 **일관성을 유지**하고자 하였습니다.
+
+- <strong> AI활용 변인통제 </strong><br>
+Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 캐시나 환경 설정을 꺼야해?
+
 | 설정 항목 | 설명 | 실험 시 권장 설정 | 비고|
 |-----------|------|------------------|----------------|
 | `query_cache_type` | 쿼리 결과를 캐시해서 재사용 | `OFF` | Mysql 0.8.x버젼부터 사용 안함 |
@@ -146,15 +134,9 @@ sudo apt install mysql-client
 | `innodb_stats_on_metadata` | 테이블 정보를 조회할 때마다 통계 재계산 | `OFF` | Mysql 0.8.x버젼부터 사용 안함 |
 | `FLUSH TABLES` | 테이블을 닫고 캐시된 데이터를 디스크에 저장 | `` | |
 
-#### ✅ 설정 확인
-```sql
-SHOW VARIABLES LIKE 'query_cache%';
-SHOW VARIABLES LIKE 'innodb_stats_on_metadata';
-SHOW VARIABLES LIKE 'performance_schema';
-```
+-> 따라서 'FLUSH TABLES' 설정만 적용했다.
 
-
-#### 파티셔닝 전  : 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
+#### 📌 파티셔닝 전  : 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
   <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
 
 
