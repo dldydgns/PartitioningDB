@@ -137,34 +137,59 @@ Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 �
 -> 따라서 'FLUSH TABLES' 설정만 적용했다.
 
 #### 📌 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
+
 - **파티셔닝 전**
   <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
 
-
-- **1. Hash Partitioning (movieId 기준)**  
-  <details>
-  <summary><strong>파티셔닝 후</strong></summary>
-    
-  <img width="1581" height="194" alt="image (2)" src="https://github.com/user-attachments/assets/a7d16200-9f06-4de3-b10e-b0eb9fe3e003" />
+- **파티셔닝 후**
   
+  **1. Hash Partitioning (movieId 기준)**  
+    ```
+    CREATE TABLE ratings_partitioned_by_movieId (
+    userId INT,
+    movieId INT,
+    rating FLOAT,
+    timestamp BIGINT,
+    PRIMARY KEY (userId, movieId)
+    )
+    PARTITION BY HASH(movieId)
+    PARTITIONS 24;
+  ```
+      
+    <img width="1581" height="194" alt="image (2)" src="https://github.com/user-attachments/assets/a7d16200-9f06-4de3-b10e-b0eb9fe3e003" />
+    
 
-  </details>
-
-- **2. userId 기준 파티셔닝 (Range 또는 Hash)**  
-  영화 조회 시 `userId`와의 연관성이 적어,  
-  조회 성능 향상에는 큰 도움이 되지 않음.
-  <details>
-  <summary><strong>파티셔닝 후</strong></summary>
-  <img width="1585" height="195" alt="image (1)" src="https://github.com/user-attachments/assets/6ff23e2f-ea3a-4b0b-bf76-a4dedd0b7b4c" />
-  </details>
-
-- **3. rating 값 기준 파티셔닝**  
-  평점 값에 따라 데이터를 분할하였으나,  
-  조회 시 인덱스 활용에 제한이 있어 오히려 성능 저하가 발생함.
-  <details>
-  <summary><strong>파티셔닝 후</strong></summary>
-  <img width="1589" height="198" alt="image" src="https://github.com/user-attachments/assets/f454d41a-5d70-4347-bcbe-8388014dff94" />
-  </details>
+  **2. userId 기준 파티셔닝 (Range 또는 Hash)**  
+    ```
+    CREATE TABLE ratings_partitioned_by_userId (
+    userId INT,
+    movieId INT,
+    rating FLOAT,
+    timestamp BIGINT,
+    PRIMARY KEY (userId, movieId)
+    )
+    PARTITION BY HASH(userId)
+    PARTITIONS 5;
+    
+    ```
+    <img width="1585" height="195" alt="image (1)" src="https://github.com/user-attachments/assets/6ff23e2f-ea3a-4b0b-bf76-a4dedd0b7b4c" />
+  
+  **3. rating 값 기준 파티셔닝**  
+    ```
+    CREATE TABLE ratings_partitioned_by_userId (
+    userId INT,
+    movieId INT,
+    rating FLOAT,
+    timestamp BIGINT,
+    PRIMARY KEY (userId, movieId)
+    )
+    PARTITION BY HASH(userId)
+    PARTITIONS 5;
+    
+    ```
+    
+    <img width="1589" height="198" alt="image" src="https://github.com/user-attachments/assets/f454d41a-5d70-4347-bcbe-8388014dff94" />
+    
 
 ---
 
