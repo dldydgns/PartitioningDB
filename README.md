@@ -29,45 +29,110 @@
 
 ---
 
-## 🚀 파티셔닝 기대 효과
+## 🎯 파티셔닝 경우의 수 실험
 
-| 개선 포인트 | 설명 |
-|-------------|------|
-| 🔍 **파티션 프루닝** | 원하는 기간의 평점만 빠르게 검색 가능 → 전체 스캔 방지 |
-| ⚡ **조회 속도 향상** | 장르별 상위 평점 영화 조회 시, 최신 평점만 빠르게 필터링 가능 |
-| 🧠 **실시간 추천 성능 개선** | 실시간에 가까운 추천 서비스 구현에 적합한 구조 |
-| 📈 **확장성 확보** | 데이터 양이 증가해도 기간별로 분산 저장되므로 성능 저하 최소화 |
+본 프로젝트에서는 `ratings` 테이블을 대상으로 다양한 파티셔닝 전략을 실험하여,  
+성공적인 파티셔닝과 불필요한 파티셔닝 사례를 비교 분석하였습니다.
 
 ---
 
-## 💡 기대 결과
-
-- 사용자는 "장르별로 평균 평점이 가장 높은 영화"를 손쉽고 빠르게 확인할 수 있음
-- 대용량 영화 평점 데이터를 효과적으로 처리하며, **실제 영화 추천 시스템과 유사한 구조**를 학습
-
-
----
-
-### 🔸 트러블슈팅 포인트
-
-- ✅ **Partition Key 선정이 매우 중요**: 자주 조회되는 조건에 맞춰야 효과가 큼 (id를 할건지, review를 할건지) 
-- ❗ **Hash 기반 파티셔닝은 파티션 수 변경이 어려움** → 초기 설계가 중요  
-- ✅ DBeaver에서는 `EXPLAIN`을 통해 어떤 파티션이 조회되었는지 확인 가능  
-- ❗ `WHERE`절에 **파티션 키가 포함되지 않으면** → 파티션 프루닝이 적용되지 않음 → 성능 향상 없음
+## 📌 실험 환경
+| 항목              | 내용              |
+|-------------------|-------------------|
+| DBMS              | MySQL 8.x         |
+| 도구              | `mysqlslap`       |
+| 데이터베이스 이름 | `movie`           |
+| 동시 접속 수      | 10 (concurrency)  |
+| 반복 횟수         | 5 (iterations)    |
 
 ---
 
-## ⚙️ 기술 스택
+### 파티셔닝 경우의 수
+**: 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때**
+#### 파티셔닝 전  
+  <img src="https://github.com/user-attachments/assets/adb994e9-459a-4061-b7d6-c744499c67cb" alt="파티셔닝 전 평균 평점 조회 성능" width="100%" style="max-width: 800px;"/>
 
-| 구분 | 사용 도구 |
-|------|-----------|
-| DBMS | MySQL 8.x |
-| DB 툴 | DBeaver |
-| 백엔드 | Java 21 |
-| JDBC 드라이버 | mysql-connector-java |
-| 빌드 도구 | Gradle |
-| OS | Windows 11 or macOS |
+- **1. Hash Partitioning (movieId 기준)**  
+  해시 함수를 이용해 `movieId` 값을 균등하게 분산시켜,  
+  특정 영화 조회 시 빠른 데이터 접근이 가능하도록 설계함.
+  
+  <details>
+  <summary><strong>파티셔닝 후</strong></summary>
+    
+  <img width="1585" height="175" alt="image" src="https://github.com/user-attachments/assets/d1cff2bd-86b4-47cc-b7df-b0efec10c962" />
 
+
+  </details>
+
+- **2. userId 기준 파티셔닝 (Range 또는 Hash)**  
+  영화 조회 시 `userId`와의 연관성이 적어,  
+  조회 성능 향상에는 큰 도움이 되지 않음.
+
+- **3. Vertical Partitioning (컬럼 분할)**  
+  컬럼별로 데이터를 나누었으나,  
+  `movieId` 기반 조회와는 직접적인 연관이 적어 효율적이지 않음.
+
+- **4. rating 값 기준 파티셔닝**  
+  평점 값에 따라 데이터를 분할하였으나,  
+  조회 시 인덱스 활용에 제한이 있어 오히려 성능 저하가 발생함.
+
+- **5. 과도한 파티션 세분화**  
+  너무 많은 파티션 생성으로 인해  
+  관리 오버헤드와 쿼리 계획 수립 복잡도가 증가함.
+
+---
+## ❓ 실험 환경 통제를 위한 질문 & 답변 (Troubleshooting 기록)
+
+### Q1. 성능 비교 실험을 하기 전, 가장 먼저 해야 할 일은?
+
+> **A. MySQL 서버의 설정(서버 변수)을 확인하고 통제하는 것이 첫 단계입니다.**  
+> 실험 결과가 정확하고 반복 가능하려면, 쿼리 캐시나 자동 최적화 같은 기능이 개입하지 않도록 설정을 통제해야 합니다.
+
+
+### Q2. 어떤 설정을 조정해야 하나요?
+
+| 설정 항목 | 설명 | 실험 시 권장 설정 |
+|-----------|------|------------------|
+| `query_cache_type` | 쿼리 결과를 캐시해서 재사용 | `OFF` |
+| `query_cache_size` | 쿼리 캐시 크기 | `0` |
+| `innodb_stats_on_metadata` | 테이블 정보를 조회할 때마다 통계 재계산 | `OFF` |
+| `performance_schema` | 성능 수집 기능, 오버헤드 발생 가능 | `OFF (선택)` |
+
+### Q3. 실제 설정을 어떻게 확인하고 조정하나요?
+
+#### ✅ 설정 확인
+```sql
+SHOW VARIABLES LIKE 'query_cache%';
+SHOW VARIABLES LIKE 'innodb_stats_on_metadata';
+SHOW VARIABLES LIKE 'performance_schema';
+```
+---
+
+### 🔸 트러블슈팅
+
+### ❌ mysqlslap 접속 에러
+
+- **❗에러 메시지**
+  ```bash
+   mysqlslap: Error when connecting to server:
+    Access denied for user 'root'@'localhost'</code>
+  ```
+- **원인**
+- `root@localhost` 계정이 비밀번호 인증 방식이 아닌 `auth_socket` 방식으로 설정되어 있는 경우, 
+  `mysqlslap`과 같은 외부 툴에서 로그인 불가
+
+- **확인 방법**
+```bash
+sudo mysql
+SELECT user, host, plugin FROM mysql.user WHERE user = 'root';
+```
+
+- **해결 방법** <br>
+MySQL에 root 계정으로 접속 후 인증 방식을 비밀번호 방식으로 변경<br>
+```bash
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '원하는비밀번호';
+FLUSH PRIVILEGES;
+```
 ---
 
 ### 📌 결론 및 회고
