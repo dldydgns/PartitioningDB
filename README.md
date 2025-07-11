@@ -9,6 +9,10 @@
 ## 🦕활용 데이터
 MovieReview Dataset (https://grouplens.org/datasets/movielens/)
 
+## 🦕 데이터셋 선정 이유
+MovieLens 32M 데이터셋은 약 3,200만 건의 영화 평점, 200만 건의 태그, 8만 7천여 개의 영화, 20만 명의 사용자 데이터를 포함하는 대규모 공개 데이터셋입니다.
+구조화된 테이블(ratings.csv, tags.csv, movies.csv, links.csv)로 제공되어 RDBMS(MySQL 등) 적재 및 파티셔닝 실습에 최적화되어 있습니다.
+영화 추천, 사용자 행동 분석, 대용량 트랜잭션 처리 등 다양한 실습 목적에 활용 가능합니다.
 <br>
 
 ## 🦕개발 환경
@@ -17,25 +21,50 @@ mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
 ```
 ---
 ## 1️⃣ MySQL에 csv 파일 업로드하기
-📍Trouble Shooting #1<br>
+<strong>📍Trouble Shooting #1 </strong><br>
 <br>
-🤔 문제<br>
-데이터셋을 improt하다가 특정 컬럼에서 데이터 타입 오류 발생으로 improt 실패
+<strong>🤔 문제 </strong><br>
+<br>
+데이터셋 improt 실패<br>
 <img width="626" height="452" alt="image (2)" src="https://github.com/user-attachments/assets/ed45b931-5e53-4f6e-9f3e-23bf032abd03" />
 <br>
+<br>
 💡 원인<br>
+특정 컬럼에서 데이터 타입 오류 발생으로 데이터 타입 오류
 
+✅ 해결<br>
+CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼만 포함하고, 각 컬럼의 타입을 명확히 지정하기로 결정함
+필요한 컬럼과 컬럼 타입을 지정할수있음
+links 테이블은 외부 링크와 연결되는 테이블이므로 불필요해서 삭제
 
+## 2️⃣ mysqlslap 설치
+Ubuntu에 성능 측정을 위한 sqlslap을 설치했다.
+```
+sudo apt update
+sudo apt install mysql-client
+```
 
-## 🦕파티셔닝 경우의 수 실험
+## 3️⃣ 파티셔닝 경우의 수 실험
 
-본 프로젝트에서는 `ratings` 테이블을 대상으로 다양한 파티셔닝 전략을 실험하여,  
-성공적인 파티셔닝과 불필요한 파티셔닝 사례를 비교 분석하였습니다.
+<strong>📍Trouble Shooting #2 </strong><br>
+<br>
+<strong>🤔 문제 </strong><br>
+<br>
+모든 테이블을 join 후 파티셔닝을 진행하려 했지만 데이터의 크기가 커서 시간이 너무 오래걸림<br>
+<br>
+<br>
+💡 원인<br>
+특정 컬럼에서 데이터 타입 오류 발생으로 데이터 타입 오류
+
+✅ 해결<br>
+CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼만 포함하고, 각 컬럼의 타입을 명확히 지정하기로 결정함
+필요한 컬럼과 컬럼 타입을
 
 ### 파티셔닝 경우의 수
-**: 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때**
+**'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때**
 #### 파티셔닝 전  
-  <img src="https://github.com/user-attachments/assets/adb994e9-459a-4061-b7d6-c744499c67cb" alt="파티셔닝 전 평균 평점 조회 성능" width="100%" style="max-width: 800px;"/>
+  <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
+
 
 - **1. Hash Partitioning (movieId 기준)**  
   해시 함수를 이용해 `movieId` 값을 균등하게 분산시켜,  
@@ -44,7 +73,7 @@ mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
   <details>
   <summary><strong>파티셔닝 후</strong></summary>
     
-  <img width="1585" height="175" alt="image" src="https://github.com/user-attachments/assets/d1cff2bd-86b4-47cc-b7df-b0efec10c962" />
+  <img width="1581" height="194" alt="image (2)" src="https://github.com/user-attachments/assets/a7d16200-9f06-4de3-b10e-b0eb9fe3e003" />
 
 
   </details>
@@ -52,18 +81,18 @@ mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
 - **2. userId 기준 파티셔닝 (Range 또는 Hash)**  
   영화 조회 시 `userId`와의 연관성이 적어,  
   조회 성능 향상에는 큰 도움이 되지 않음.
+  <details>
+  <summary><strong>파티셔닝 후</strong></summary>
+  <img width="1585" height="195" alt="image (1)" src="https://github.com/user-attachments/assets/6ff23e2f-ea3a-4b0b-bf76-a4dedd0b7b4c" />
+  </details>
 
-- **3. Vertical Partitioning (컬럼 분할)**  
-  컬럼별로 데이터를 나누었으나,  
-  `movieId` 기반 조회와는 직접적인 연관이 적어 효율적이지 않음.
-
-- **4. rating 값 기준 파티셔닝**  
+- **3. rating 값 기준 파티셔닝**  
   평점 값에 따라 데이터를 분할하였으나,  
   조회 시 인덱스 활용에 제한이 있어 오히려 성능 저하가 발생함.
-
-- **5. 과도한 파티션 세분화**  
-  너무 많은 파티션 생성으로 인해  
-  관리 오버헤드와 쿼리 계획 수립 복잡도가 증가함.
+  <details>
+  <summary><strong>파티셔닝 후</strong></summary>
+  <img width="1589" height="198" alt="image" src="https://github.com/user-attachments/assets/f454d41a-5d70-4347-bcbe-8388014dff94" />
+  </details>
 
 ---
 ## ❓ 실험 환경 통제를 위한 질문 & 답변 (Troubleshooting 기록)
