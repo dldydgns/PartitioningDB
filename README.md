@@ -4,12 +4,37 @@
 **파티셔닝이 실제로 성능 개선에 얼마나 효과적인지 실험적으로 확인**하는 것을 최종 목표로 합니다.
 
 ## 🦕Team
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Minkyoungg0">
+        <img src="https://avatars.githubusercontent.com/Minkyoungg0" width="100px;" alt=""/>
+        <br />
+        <sub><b>문민경</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Gill010147">
+        <img src="https://avatars.githubusercontent.com/Gill010147" width="100px;" alt=""/>
+        <br />
+        <sub><b>황병길</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/dldydgns">
+        <img src="https://avatars.githubusercontent.com/dldydgns" width="100px;" alt=""/>
+        <br />
+        <sub><b>이용훈</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ---
 ## 🦕활용 데이터
 MovieReview Dataset (https://grouplens.org/datasets/movielens/)
 
-## 🦕 데이터셋 선정 이유
+- <Strong> 데이터셋 선정 이유 </Strong><br>
 MovieLens 32M 데이터셋은 약 3,200만 건의 영화 평점, 200만 건의 태그, 8만 7천여 개의 영화, 20만 명의 사용자 데이터를 포함하는 대규모 공개 데이터셋입니다.
 구조화된 테이블(ratings.csv, tags.csv, movies.csv, links.csv)로 제공되어 RDBMS(MySQL 등) 적재 및 파티셔닝 실습에 최적화되어 있습니다.
 영화 추천, 사용자 행동 분석, 대용량 트랜잭션 처리 등 다양한 실습 목적에 활용 가능합니다.
