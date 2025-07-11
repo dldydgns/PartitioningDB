@@ -64,7 +64,24 @@ mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
 ```
 ---
 ## 1️⃣ MySQL에 csv 파일 업로드하기
-[추가] - DBeaver 활용하여 csv 자동 임포트 가능, CSV파일 import시 자동 테이블 생성 기능을 활용하려 하였지만 자동으로 인지한 속성이 부정확하여 에러 발생, 테이블 직접 생성 및 매핑으로 해결
+<!-- [추가] - DBeaver 활용하여 csv 자동 임포트 가능, CSV파일 import시 자동 테이블 생성 기능을 활용하려 하였지만 자동으로 인지한 속성이 부정확하여 에러 발생, 테이블 직접 생성 및 매핑으로 해결 -->
+###  DBeaver 활용하여 csv 자동 임포트 기능 활용
+<details>
+<summary>DBeaver에서 MySQL 타입의 movieLens 데이터베이스 생성</summary>
+
+DBeaver에서 MySQL 데이터베이스를 생성한 후, 아래와 같이 진행했습니다.
+
+<img width="651" height="426" alt="image" src="https://github.com/user-attachments/assets/3b486dc8-4631-469c-a555-6fe0f69e9bce" />
+
+Import source에서 다운받은 데이터셋 csv파일을 적재(Encoding - utf-8 확인)
+
+<img width="550" height="350" alt="image" src="https://github.com/user-attachments/assets/1b92c8fb-4054-44d0-acd7-bea92ecbb196" />
+
+Tables mapping에서 데이터 타입을 확인할 수 있지만, **수정은 불가능**한 문제가 발생
+
+<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/561553d1-0fac-4b69-a42e-eede397d0d4e" />
+
+</details>
 
 <strong>📍Trouble Shooting #1 </strong><br>
 <br>
