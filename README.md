@@ -136,14 +136,12 @@ Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 �
 
 -> 따라서 'FLUSH TABLES' 설정만 적용했다.
 
-#### 📌 파티셔닝 전  : 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
+#### 📌 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
+- **파티셔닝 전**
   <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
 
 
 - **1. Hash Partitioning (movieId 기준)**  
-  해시 함수를 이용해 `movieId` 값을 균등하게 분산시켜,  
-  특정 영화 조회 시 빠른 데이터 접근이 가능하도록 설계함.
-  
   <details>
   <summary><strong>파티셔닝 후</strong></summary>
     
