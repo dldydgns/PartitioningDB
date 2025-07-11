@@ -176,22 +176,24 @@ Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 �
   
   **3. rating 값 기준 파티셔닝**  
     ```
-    CREATE TABLE ratings_partitioned_by_userId (
+    CREATE TABLE ratings_partitioned_by_rating (
     userId INT,
     movieId INT,
-    rating FLOAT,
+    rating INT,  -- rating을 정수형으로 변환 (예: 0~5 범위로 제한)
     timestamp BIGINT,
-    PRIMARY KEY (userId, movieId)
+    PRIMARY KEY (userId, movieId, rating)
     )
-    PARTITION BY HASH(userId)
-    PARTITIONS 5;
+    PARTITION BY RANGE (rating) (
+    PARTITION p0_1 VALUES LESS THAN (1),
+    PARTITION p1_2 VALUES LESS THAN (2),
+    PARTITION p2_3 VALUES LESS THAN (3),
+    PARTITION p3_4 VALUES LESS THAN (4),
+    PARTITION p4_5 VALUES LESS THAN (6)  -- 5 포함을 위해 6으로 지정
+    );
     
     ```
     
     <img width="1589" height="198" alt="image" src="https://github.com/user-attachments/assets/f454d41a-5d70-4347-bcbe-8388014dff94" />
-    
-
----
 
 
 ---
