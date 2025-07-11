@@ -61,6 +61,37 @@ CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼
 필요한 컬럼과 컬럼 타입을 지정할수있음
 links 테이블은 외부 링크와 연결되는 테이블이므로 불필요해서 삭제
 
+## 테이블 구조 설계
+| 테이블명 | 컬럼명    | 타입         | 설명                   |
+|----------|-----------|--------------|------------------------|
+| movies   | movieId   | INT (PK)     | 영화 고유번호          |
+|          | title     | TEXT         | 영화 제목              |
+|          | genres    | VARCHAR(500) | 장르(파이프 구분)      |
+| ratings  | userId    | INT          | 사용자 ID              |
+|          | movieId   | INT          | 영화 ID                |
+|          | rating    | FLOAT        | 평점(0.5~5.0)          |
+|          | timestamp | BIGINT       | 평점 등록 시각(UNIXTIME)|
+| tags     | userId    | INT          | 사용자 ID              |
+|          | movieId   | INT          | 영화 ID                |
+|          | tag       | TEXT         | 태그                   |
+|          | timestamp | BIGINT       | 태그 등록 시각(UNIXTIME)|
+---
+## 파티션 키 선정 및 이유
+- **timestamp**
+  - 데이터가 연도별로 분포되어 있어, 기간별(연/월) RANGE 파티셔닝 시 관리와 쿼리 성능이 좋아짐
+- **userId**
+  - 사용자별 데이터 분산이 필요할 때 HASH 파티셔닝 적용, 추천/개인화 분석에 유리
+- **movieId**
+  - 영화별/장르별 분석이 많을 때 HASH 또는 RANGE 파티셔닝으로 특정 영화 쿼리 최적화
+- **rating**
+  - 평점 구간별 분석이 필요할 때 LIST 파티셔닝으로 평점대별 분리 가능
+> 파티션 키는 데이터 분포, 쿼리 패턴, 관리 목적에 맞춰 유연하게 선택하였음.
+- **데이터 적재 후 전처리:**  
+  - 총 데이터가 30,000,000건 
+  - 영화 ID가 1000 이하인 데이터만 남김
+(`delete from ... where movieid > 1000`)
+  - `ratings` 테이블 남은 행 수: 약 6,263,945건
+
 ## 2️⃣ mysqlslap 설치
 Ubuntu에 성능 측정을 위한 sqlslap을 설치했다.
 ```
