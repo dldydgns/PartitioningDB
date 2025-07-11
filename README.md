@@ -39,29 +39,8 @@ MovieReview Dataset (https://grouplens.org/datasets/movielens/)
 **각 영화에 대한 여러 유저의 평점을 평균화**하여, **장르별로 평점이 가장 높은 영화**를 손쉽게 확인할 수 있도록 돕는 것이 출발점이었습니다.
 <br>
 
-## 🦕개발 환경
-```
-mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
-```
----
-## 1️⃣ MySQL에 csv 파일 업로드하기
-<strong>📍Trouble Shooting #1 </strong><br>
-<br>
-<strong>🤔 문제 </strong><br>
-<br>
-데이터셋 improt 실패<br>
-<img width="626" height="452" alt="image (2)" src="https://github.com/user-attachments/assets/ed45b931-5e53-4f6e-9f3e-23bf032abd03" />
-<br>
-<br>
-💡 원인<br>
-특정 컬럼에서 데이터 타입 오류 발생으로 데이터 타입 오류
+- <strong> 테이블 구조 설계 </strong> <br>
 
-✅ 해결<br>
-CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼만 포함하고, 각 컬럼의 타입을 명확히 지정하기로 결정함
-필요한 컬럼과 컬럼 타입을 지정할수있음
-links 테이블은 외부 링크와 연결되는 테이블이므로 불필요해서 삭제
-
-## 테이블 구조 설계
 | 테이블명 | 컬럼명    | 타입         | 설명                   |
 |----------|-----------|--------------|------------------------|
 | movies   | movieId   | INT (PK)     | 영화 고유번호          |
@@ -75,23 +54,32 @@ links 테이블은 외부 링크와 연결되는 테이블이므로 불필요해
 |          | movieId   | INT          | 영화 ID                |
 |          | tag       | TEXT         | 태그                   |
 |          | timestamp | BIGINT       | 태그 등록 시각(UNIXTIME)|
----
-## 파티션 키 선정 및 이유
-- **timestamp**
-  - 데이터가 연도별로 분포되어 있어, 기간별(연/월) RANGE 파티셔닝 시 관리와 쿼리 성능이 좋아짐
-- **userId**
-  - 사용자별 데이터 분산이 필요할 때 HASH 파티셔닝 적용, 추천/개인화 분석에 유리
-- **movieId**
-  - 영화별/장르별 분석이 많을 때 HASH 또는 RANGE 파티셔닝으로 특정 영화 쿼리 최적화
-- **rating**
-  - 평점 구간별 분석이 필요할 때 LIST 파티셔닝으로 평점대별 분리 가능
-> 파티션 키는 데이터 분포, 쿼리 패턴, 관리 목적에 맞춰 유연하게 선택하였음.
-- **데이터 적재 후 전처리:**  
-  - 총 데이터가 30,000,000건 
-  - 영화 ID가 1000 이하인 데이터만 남김
-(`delete from ... where movieid > 1000`)
-  - `ratings` 테이블 남은 행 수: 약 6,263,945건
 
+---
+
+## 🦕개발 환경
+```
+mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
+```
+---
+## 1️⃣ MySQL에 csv 파일 업로드하기
+<strong>📍Trouble Shooting #1 </strong><br>
+<br>
+<strong>🤔 문제 </strong><br>
+<br>
+데이터셋 improt 하면서 오류 발생 <br>
+<br>
+<img width="626" height="452" alt="image (2)" src="https://github.com/user-attachments/assets/ed45b931-5e53-4f6e-9f3e-23bf032abd03" />
+<br>
+<br>
+💡 원인<br>
+특정 컬럼에서 데이터 크기 타입이 작아서 문제 발생
+
+✅ 해결<br>
+CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼만 포함하고, 각 컬럼의 크기 타입을 명확히 지정하기로 결정함
+필요한 컬럼과 컬럼 타입을 지정할수있음
+links 테이블은 외부 링크와 연결되는 테이블이므로 불필요해서 삭제
+<br>
 ## 2️⃣ mysqlslap 설치
 Ubuntu에 성능 측정을 위한 sqlslap을 설치했다.
 ```
@@ -105,19 +93,18 @@ sudo apt install mysql-client
 <br>
 <strong>🤔 문제 </strong><br>
 <br>
+데이터가 너무 커서 
 모든 테이블을 join 후 파티셔닝을 진행하려 했지만 데이터의 크기가 커서 시간이 너무 오래걸림<br>
 <br>
 <br>
 💡 원인<br>
-특정 컬럼에서 데이터 타입 오류 발생으로 데이터 타입 오류
+
 
 ✅ 해결<br>
-CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼만 포함하고, 각 컬럼의 타입을 명확히 지정하기로 결정함
-필요한 컬럼과 컬럼 타입을
+<br>
+<br>
 
-### 파티셔닝 경우의 수
-**'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때**
-#### 파티셔닝 전  
+#### 파티셔닝 전  : 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
   <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
 
 
@@ -129,7 +116,7 @@ CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼
   <summary><strong>파티셔닝 후</strong></summary>
     
   <img width="1581" height="194" alt="image (2)" src="https://github.com/user-attachments/assets/a7d16200-9f06-4de3-b10e-b0eb9fe3e003" />
-
+  
 
   </details>
 
