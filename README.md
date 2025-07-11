@@ -35,25 +35,26 @@
 MovieReview Dataset (https://grouplens.org/datasets/movielens/)
 
 - <Strong> 데이터셋 선정 이유 </Strong><br> --> 뭐하지?
-사용자가 영화를 선택할 때, **장르별로 높은 평점을 받은 영화를 빠르게 추천**해주는 시스템을 구현하고자 했습니다.  
-**각 영화에 대한 여러 유저의 평점을 평균화**하여, **장르별로 평점이 가장 높은 영화**를 손쉽게 확인할 수 있도록 돕는 것이 출발점이었습니다.
+여러 리뷰 페이지에서 수많은 상품에 대한 리뷰가 **빠르게 조회**되는 이유가 궁금해 성능 향상 기법을 찾던 중, DB 파티셔닝에 대해 알게 되었습니다.
+이를 직접 실습해보고 이해하기 위해 리뷰 데이터가 풍부한 영화 데이터를 선정하게 되었습니다.
+**각 영화에 대한 여러 유저의 평점을 평균화**하여, **장르별로 평점이 가장 높은 영화**를 손쉽게 확인할 수 있도록 구현함이 목표입니다.
 <br>
 
-- <strong> 테이블 구조 설계 </strong> <br>
+<strong> 테이블 구조 설계 </strong> <br>
+> <strong>movies</strong>
+> | 컬럼명    | 타입         | 설명                   |
+> |-----------|--------------|------------------------|
+> | movieId   | INT (PK)     | 영화 고유번호          |
+> | title     | TEXT         | 영화 제목              |
+> | genres    | VARCHAR(500) | 장르(파이프 구분)      |
 
-| 테이블명 | 컬럼명    | 타입         | 설명                   |
-|----------|-----------|--------------|------------------------|
-| movies   | movieId   | INT (PK)     | 영화 고유번호          |
-|          | title     | TEXT         | 영화 제목              |
-|          | genres    | VARCHAR(500) | 장르(파이프 구분)      |
-| ratings  | userId    | INT          | 사용자 ID              |
-|          | movieId   | INT          | 영화 ID                |
-|          | rating    | FLOAT        | 평점(0.5~5.0)          |
-|          | timestamp | BIGINT       | 평점 등록 시각(UNIXTIME)|
-| tags     | userId    | INT          | 사용자 ID              |
-|          | movieId   | INT          | 영화 ID                |
-|          | tag       | TEXT         | 태그                   |
-|          | timestamp | BIGINT       | 태그 등록 시각(UNIXTIME)|
+> <strong>ratings</strong>
+> | 컬럼명    | 타입         | 설명                   |
+> |-----------|--------------|------------------------|
+> | userId    | INT          | 사용자 ID              |
+> | movieId   | INT          | 영화 ID                |
+> | rating    | FLOAT        | 평점(0.5~5.0)          |
+> | timestamp | BIGINT       | 평점 등록 시각(UNIXTIME)|
 
 ---
 
@@ -63,13 +64,15 @@ mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
 ```
 ---
 ## 1️⃣ MySQL에 csv 파일 업로드하기
+[추가] - DBeaver 활용하여 csv 자동 임포트 가능, CSV파일 import시 자동 테이블 생성 기능을 활용하려 하였지만 자동으로 인지한 속성이 부정확하여 에러 발생, 테이블 직접 생성 및 매핑으로 해결
+
 <strong>📍Trouble Shooting #1 </strong><br>
 <br>
 <strong>🤔 문제 </strong><br>
 <br>
 데이터셋 improt 하면서 오류 발생 <br>
 <br>
-<img width="626" height="452" alt="image (2)" src="https://github.com/user-attachments/assets/ed45b931-5e53-4f6e-9f3e-23bf032abd03" />
+<img width="300" height="200" alt="image (2)" src="https://github.com/user-attachments/assets/ed45b931-5e53-4f6e-9f3e-23bf032abd03" />
 <br>
 <br>
 💡 원인<br>
@@ -79,6 +82,9 @@ mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
 CSV를 임포트하기 전, 테이블을 직접 생성하면서 원하는 컬럼만 포함하고, 각 컬럼의 크기 타입을 명확히 지정하기로 결정함
 필요한 컬럼과 컬럼 타입을 지정할수있음
 links 테이블은 외부 링크와 연결되는 테이블이므로 불필요해서 삭제
+
+[추가] - 가공되지 않은 데이터가 너무 많아 불필요한 대기시간이 길었다, 영화 id값을 기준으로 1000이상은 모두 제거하였다. (약 2300만->620만개의 리뷰 데이터) 
+
 <br>
 ## 2️⃣ mysqlslap 설치
 Ubuntu에 성능 측정을 위한 sqlslap을 설치했다.
