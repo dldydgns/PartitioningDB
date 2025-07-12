@@ -358,7 +358,7 @@ GROUP BY m.title;
 WHERE m.title LIKE('Toy Story');   -- 프루닝 불가 ❌
   
 -- 성능 개선을 위한 수정
-WHERE WHERE m.movieId = 1;         -- 프루닝 가능 ✅
+WHERE m.movieId = 1;         -- 프루닝 가능 ✅
 ```
   
 3. 따라서 movieId를 직접 지정한 경우에 파티션 푸르닝이 발생한다.
