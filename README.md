@@ -62,6 +62,7 @@ MovieReview Dataset (https://grouplens.org/datasets/movielens/)
 ```
 mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
 DBeaver
+mysqlslap
 ```
 ---
 ## :one: MySQL에 csv 파일 업로드하기
