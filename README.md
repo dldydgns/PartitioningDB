@@ -37,7 +37,7 @@ MovieReview Dataset (https://grouplens.org/datasets/movielens/)
 - <Strong> 데이터셋 선정 이유 </Strong><br>
 여러 리뷰 페이지에서 수많은 상품에 대한 리뷰가 **빠르게 조회**되는 이유가 궁금해 성능 향상 기법을 찾던 중, DB 파티셔닝에 대해 알게 되었습니다.
 이를 직접 실습해보고 이해하기 위해 리뷰 데이터가 풍부한 영화 데이터를 선정하게 되었습니다.
-**각 영화에 대한 여러 유저의 평점을 평균화**하여, **장르별로 평점이 가장 높은 영화**를 손쉽게 확인할 수 있도록 구현함이 목표입니다.
+**각 영화에 대한 여러 유저의 평점 평균**을 통해 손쉽게 인기있는 영화를 확인할 수 있도록 구현함이 목표입니다.
 <br>
 
 <strong> 테이블 구조 설계 </strong> <br>
@@ -66,24 +66,22 @@ mysql  Ver 8.0.42-0ubuntu0.24.04.1 for Linux on x86_64 ((Ubuntu))
 ## :one: MySQL에 csv 파일 업로드하기
 <!-- [추가] - DBeaver 활용하여 csv 자동 임포트 가능, CSV파일 import시 자동 테이블 생성 기능을 활용하려 하였지만 자동으로 인지한 속성이 부정확하여 에러 발생, 테이블 직접 생성 및 매핑으로 해결 -->
 <strong>📍Trouble Shooting #1 </strong><br>
-<br>
-<strong> 🤔 문제 </strong><br>
-<br>
-데이터셋 improt 하면서 오류 발생 <br>
+
+🤔문제  
+DBeaver에서 데이터셋을 자동 improt 하며 오류 발생
 <br>
 <img width="300" height="200" alt="image (2)" src="https://github.com/user-attachments/assets/ed45b931-5e53-4f6e-9f3e-23bf032abd03" />
 <br>
-<br>
-💡 원인<br>
-Vachar(50)인 genres와 timestamp의 데이터가 테이블의 제약조건보다 길이가 길어 오류 발생
-<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/561553d1-0fac-4b69-a42e-eede397d0d4e" /><br>
+💡 원인
+Vachar(50)인 genres와 timestamp의 데이터가 테이블의 제약조건보다 길이가 길어 오류 발생<br>
+<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/561553d1-0fac-4b69-a42e-eede397d0d4e" />
 
 ✅해결<br>
 CSV를 임포트 하면서 데이터 크기 제약조건을 50 -> 500으로 변경하여 데이터 불러오는 데 성공 <!-- 왜 500으로? -->
 
 <br>
 
-📍 Trouble Shooting #2
+<strong>📍 Trouble Shooting #2 </strong><br>
 
 🤔문제  
 파티셔닝 테이블로 데이터를 로딩할 때 **30분 이상 지연되는 현상 발생**
@@ -112,9 +110,9 @@ sudo apt install mysql-client
 ```
 
 💡 mysqlslab 설치 이유<br>
-단순 조회 1회의 속도보다, **가상의 사용자가 동일한 쿼리를 반복 실행하는 상황에서의 평균 성능을 측정**하고자 하였다.
+**가상의 사용자가 동일한 쿼리를 반복 실행하는 상황에서의 평균 성능을 측정**하고자 하였다.
 mysqlslap은 동시 접속과 반복 실행을 통한 부하 테스트가 가능하여,
-파티셔닝 전후 또는 방식별 쿼리 성능을 객관적으로 비교하기 위한 벤치마크 도구로 적합하다고 판단했다.
+파티셔닝 전후 성능을 객관적으로 비교하기 위한 벤치마크 도구로 적합하다고 판단했다.
 
 <br>
 
@@ -129,8 +127,7 @@ mysqlslap 접속 에러
   ```
 
 💡 원인<br>
-- `root@localhost` 계정이 비밀번호 인증 방식이 아닌 `auth_socket` 방식으로 설정되어 있는 경우, 
-  `mysqlslap`과 같은 외부 툴에서 로그인 불가
+`root@localhost` 계정이 비밀번호 인증 방식이 아닌 `auth_socket` 방식으로 설정되어 있는 경우, `mysqlslap`과 같은 외부 툴에서 로그인 불가
 
 ✅ 해결  
 MySQL에 root 계정으로 접속 후 인증 방식을 비밀번호 방식으로 변경<br>
@@ -141,13 +138,11 @@ FLUSH PRIVILEGES;
 
 <br>
 
-## 3️⃣ 파티셔닝 옵션별 테스트
+## 3️⃣ 실험 환경 통제
 테스트를 진행하기 전
-성능 테스트의 신뢰성을 높이기 위해, **AI를 활용해 MySQL 환경 설정을 분석·적용**하였습니다.
-특히 쿼리 캐시나 메타데이터 통계처럼 **결과에 영향을 줄 수 있는 요소들을 통제**해
-실험 간 **일관성을 유지**하고자 하였습니다.
+성능 테스트의 신뢰성을 높이기 위해 AI를 활용해 파티셔닝 외에 실행속도에 영향을 줄 요인을 제거하여 실험 간 **일관성을 유지**하고자 하였습니다.
 
-- <strong> AI활용 변인통제 </strong><br>
+- <strong> 질의어 </strong><br>
 Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 캐시나 환경 설정을 꺼야해?
 
 | 설정 항목 | 설명 | 실험 시 권장 설정 | 비고|
@@ -157,86 +152,304 @@ Q. MySQL에서 파티셔닝 전후 성능 비교를 정확히 하려면 어떤 �
 | `innodb_stats_on_metadata` | 테이블 정보를 조회할 때마다 통계 재계산 | `OFF` | Mysql 0.8.x버젼부터 사용 안함 |
 | `FLUSH TABLES` | 테이블을 닫고 캐시된 데이터를 디스크에 저장 | `` | |
 
--> 따라서 'FLUSH TABLES' 설정만 적용했다.
+-> mysql 8.0.42 버젼을 사용중이므로 쿼리 실행전 'FLUSH TABLES'만 진행
 
-#### 📌 'movieId' 값을 기준으로 'rating'값의 평균을 조회할 때
+<br>
 
-예상결과: movieId 기준으로 Partitioning을 했을 때만 성능향상, rating과 userId로 Partitioning을 했을 때는 오히려 성능 감소
+## 4️⃣ 테이블 생성 및 테스트
 
+### 📖 테이블 생성
 
-- **파티셔닝 전**
-  <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
+> **각 영화에 대한 여러 유저의 평점 평균**을 빠르게 조회하기 위해서는 리뷰들에 대한 조회가 빨라야 하기 때문에 ratings 테이블을 파티셔닝 테이블로 선정하였다.
 
-- **파티셔닝 후**
-  
+- **파티셔닝 전**<br>
+  ** 기본 테이블 **
+  ```sql
+  CREATE TABLE ratings (
+   userId INT,
+   movieId INT,
+   rating FLOAT,
+   timestamp BIGINT
+  );
+  ```
+
+- **파티셔닝 후**<br>
   **1. Hash Partitioning (movieId 기준)**  
-    ```
-    CREATE TABLE ratings_partitioned_by_movieId (
+  ```sql
+  CREATE TABLE ratings_partitioned_by_movieId (
     userId INT,
     movieId INT,
     rating FLOAT,
     timestamp BIGINT,
     PRIMARY KEY (userId, movieId)
-    )
-    PARTITION BY HASH(movieId)
-    PARTITIONS 24;
+  )
+  PARTITION BY HASH(movieId)
+  PARTITIONS 24;
   ```
-      
-    <img width="1581" height="194" alt="image (2)" src="https://github.com/user-attachments/assets/a7d16200-9f06-4de3-b10e-b0eb9fe3e003" />
     
 
   **2. userId 기준 파티셔닝 (Range 또는 Hash)**  
-    ```
-    CREATE TABLE ratings_partitioned_by_userId (
+  ```sql
+  CREATE TABLE ratings_partitioned_by_userId (
     userId INT,
     movieId INT,
     rating FLOAT,
     timestamp BIGINT,
     PRIMARY KEY (userId, movieId)
-    )
-    PARTITION BY HASH(userId)
-    PARTITIONS 5;
-    
-    ```
-    <img width="1585" height="195" alt="image (1)" src="https://github.com/user-attachments/assets/6ff23e2f-ea3a-4b0b-bf76-a4dedd0b7b4c" />
+  )
+  PARTITION BY HASH(userId)
+  PARTITIONS 5;
+  ```
   
   **3. rating 값 기준 파티셔닝**  
-    ```
-    CREATE TABLE ratings_partitioned_by_rating (
+  ```sql
+  CREATE TABLE ratings_partitioned_by_rating (
     userId INT,
     movieId INT,
     rating INT,  -- rating을 정수형으로 변환 (예: 0~5 범위로 제한)
     timestamp BIGINT,
     PRIMARY KEY (userId, movieId, rating)
-    )
-    PARTITION BY RANGE (rating) (
-    PARTITION p0_1 VALUES LESS THAN (1),
-    PARTITION p1_2 VALUES LESS THAN (2),
-    PARTITION p2_3 VALUES LESS THAN (3),
-    PARTITION p3_4 VALUES LESS THAN (4),
-    PARTITION p4_5 VALUES LESS THAN (6)  -- 5 포함을 위해 6으로 지정
-    );
-    
-    ```
-    <img width="1589" height="198" alt="image" src="https://github.com/user-attachments/assets/f454d41a-5d70-4347-bcbe-8388014dff94" />
+  )
+  PARTITION BY RANGE (rating) (
+  PARTITION p0_1 VALUES LESS THAN (1),
+  PARTITION p1_2 VALUES LESS THAN (2),
+  PARTITION p2_3 VALUES LESS THAN (3),
+  PARTITION p3_4 VALUES LESS THAN (4),
+  PARTITION p4_5 VALUES LESS THAN (6)  -- 5 포함을 위해 6으로 지정
+  );
+  ```
+
+### 🧪 1차 테스트
+
+#### 🏃 테스트 진행 
+
+**각 영화에 대한 여러 유저의 평점 평균**을 조회하기 위해서는 movidId로 GroupBy하여 질의하므로, 파티셔닝 또한 movidId를 파티션키로 설정하는 것이 성능 향상에 도움이 될 것이라 예상하였다.<br>
+
+사전 기대 결과
+> 파티션키와 select절의 where조건이 동일해야만 성능 개선이 될 것이라 예상했다.
+> 파티션키와 조회조건이 다를 경우 불필요한 해시 과정등이 발생하여 조회성능은 오히려 느려질 것이라 생각했다.
+
+- 질의문
+  1. 파티셔닝❌
+  <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
+  2. movieId(Hash)
+  <img width="1585" height="195" alt="image (1)" src="https://github.com/user-attachments/assets/6ff23e2f-ea3a-4b0b-bf76-a4dedd0b7b4c" />
+  3. userId(Hash)
+  <img width="1581" height="194" alt="image (2)" src="https://github.com/user-attachments/assets/a7d16200-9f06-4de3-b10e-b0eb9fe3e003" />
+  4. rating(Range)
+  <img width="1589" height="198" alt="image" src="https://github.com/user-attachments/assets/f454d41a-5d70-4347-bcbe-8388014dff94" />
 
 - 테스트 결과 요약
+  | 테스트 케이스            | 평균 실행 시간(초) | 최소(초) | 최대(초) | 비고                   |
+  |-------------------------|-------------------|----------|----------|--------------------------|
+  | 파티셔닝 전             | 28.466            | 27.241   | 29.194   | 기준값                    |
+  | movieId 해시 파티셔닝   | 0.599             | 0.571    | 0.651    | **가장 빠름**             |
+  | userId 해시 파티셔닝    | 12.138            | 11.407   | 12.324   |                           |
+  | rating RANGE 파티셔닝   | 11.531            | 11.466   | 11.685   |                           |
 
-| 테스트 케이스            | 평균 실행 시간(초) | 최소(초) | 최대(초) | 비고                      |
-|-------------------------|-------------------|----------|----------|---------------------------|
-| 파티셔닝 전             | 28.466            | 27.241   | 29.194   | 기준값                    |
-| movieId 해시 파티셔닝   | 0.599             | 0.571    | 0.651    | **가장 빠름**             |
-| userId 해시 파티셔닝    | 12.138            | 11.407   | 12.324   | 프루닝 불가, 개선 제한적  |
-| rating RANGE 파티셔닝   | 11.531            | 11.466   | 11.685   | 데이터 불균형, 개선 제한적|
+#### 📌 1차 결론
 
--> movieId 파티셔닝이 가장 빠르긴 하지만, 예상했던 userId와 rating 파티셔닝의 성능 저하가 나타나지 않았다.
-원인이 뭘까?
+movieId를 파티셔닝 키로 지정한 테이블이 조회성능이 가장 빨랐지만, 다른 속성들을 기준으로 파티셔닝 한 테이블들 또한 성능향상이 일어났다. 이때까지는 파티셔닝이 디스크를 분할하기 때문에 IO속도가 빨라 질 것이라는 추측을 하였다.
+
+### 🧪 2차 테스트
+
+#### 🏃 테스트 진행 
+
+사용자 입장에서는 특정 영화의 정보를 조회를 할 때 영화의 이름을 기준으로 조회한다.
+따라서 movie테이블과 ratings테이블을 조인하여 사용하게 되는데, 이때도 파티셔닝이 조회성능 향상에 도움을 줄 것이라 예상했다.
+
+사전 기대 결과
+> 파티셔닝은 조인 성능에도 도움을 줄 것이다.
+> 파티셔닝키와 조인키, 파티셔닝키와 조회조건 모두가 일치 한 경우에만 조회 성능 향상이 일어 날 것이다.
+
+- 질의문
+  ```sql
+  -- 일반 테이블
+  SELECT SQL_NO_CACHE m.title AS 제목, ROUND(AVG(r.rating), 2) AS 평점
+  FROM movies m
+  JOIN ratings r ON r.movieId = m.movieId
+  WHERE m.title Like('Toy Story')
+  GROUP BY m.title;
+  
+  -- 파티셔닝 테이블 (movieId 기준)
+  SELECT m.title AS 제목, ROUND(AVG(r.rating), 2) AS 평점
+  FROM movies m
+  JOIN ratings_partitioned_by_movieId r ON r.movieId = m.movieId
+  WHERE m.title Like('Toy Story')
+  GROUP BY m.title;
+  
+  -- 파티셔닝 테이블 (rating 기준)
+  SELECT m.title AS 제목, ROUND(AVG(r.rating), 2) AS 평점
+  FROM movies m
+  JOIN ratings_partitioned_by_rating r ON r.movieId = m.movieId
+  WHERE m.title Like('Toy Story')
+  GROUP BY m.title;
+
+  -- 파티셔닝 테이블 (userId 기준)
+  SELECT m.title AS 제목, ROUND(AVG(r.rating), 2) AS 평점
+  FROM movies m
+  JOIN ratings_partitioned_by_userId r ON r.movieId = m.movieId
+  WHERE m.title Like('Toy Story')
+  GROUP BY m.title;
+  ```
+
+- 테스트 결과 요약
+  | 테스트 케이스         | 평균 실행 시간(초) | 최소(초)  | 최대(초)  | 비고  |
+  | --------------- | ----------- | ------ | ------ | --- |
+  | 파티셔닝 없음         | 34.079      | 33.829 | 34.403 | 기준값 |
+  | movieId 해시 파티셔닝 | 15.972      | 15.841 | 16.045 |     |
+  | rating 해시 파티셔닝  | 15.925      | 15.810 | 16.048 |     |
+  | userId Range 파티셔닝  | 15.935      | 15.832 | 16.049 |     |
+
+#### 📌 2차 결론
+
+예상과 다르게 movieId를 기준으로 파티셔닝 한 테이블에서 성능향상이 발생하지 않았다.
+파티셔닝이 없는 테이블보다 잘못된 파티셔닝을 진행한 테이블에서 성능향상이 발생했다.
+movieId 해시 파티셔닝 테이블에서 성능 향상이 발생하지 않은 이유를 몰라 AI를 활용하여 답을 찾아보았다
+
+### ⚠️ 예상외의 결과
+
+#### ❔ 문제상황 인지
+
+AI를 활용하여 빠르게 문제를 인지하였다.
+
+- <strong> 질의어 </strong><br>
+Q. mysql에서 파티셔닝을 한 테이블과 일반 테이블과의 조인에서 고려해야 할 사항이 있을까?
+
+✅ 1. 파티션 프루닝(Partition Pruning)이 불가능할 수 있음
+- 조인에서는 파티션 키가 WHERE절 또는 ON절에 명시적으로 사용되지 않으면 MySQL이 어떤 파티션을 사용할지 판단 못해 모든 파티션을 스캔할 수 있습니다.
+- 예: 파티션 키가 userId인데, 조인 조건 또는 WHERE절에 userId가 없으면 프루닝 안 됨.
+
+✅ 2. 인덱스 사용이 제한될 수 있음
+- 파티셔닝된 테이블은 파티션 키에 포함되지 않은 컬럼에 대한 인덱스가 효과적이지 않을 수 있습니다.
+- 또한, 일부 조인 전략에서는 인덱스를 무시하고 풀 테이블 스캔이 발생할 수 있습니다.
+  
+✅ 4. 파티션 키와 조인 키가 다르면 성능저하 가능성 있음
+- 일반 테이블과 조인 시, 조인 키 ≠ 파티션 키인 경우, 불필요한 파티션 접근이 늘어나고 해시 리디스트리뷰션이 일어날 수 있어 성능이 떨어질 수 있습니다.
+
+- <strong> 질의어 </strong><br>
+Q. 파티션 푸르닝이 안되는 이유에는 뭐가있을까?
+
+5. LIKE, BETWEEN, IN 등의 조건 사용 (일부 경우)
+- LIKE는 패턴 매칭이라 정적인 값이 아님
+- IN, BETWEEN은 복잡한 조건이거나 값이 많을 경우 판단 불가
 
 ---
 
-### 📌 결론 및 회고
+#### 👏 1차로 찾은 원인
 
-> 파티셔닝은 단순히 데이터를 나누는 것이 아니라,  
-> **조회 패턴을 고려한 물리적 구조 최적화 전략**입니다.  
-> 정규화와는 목적과 시점이 다르며,  
-> **대용량 데이터 처리에 필수적인 튜닝 기법**으로써 성능 향상에 직접적인 영향을 줍니다.
+1. **`LIKE('Toy Story')`** 구문을 사용하여 **정확한 상수 비교가 아니었기 때문에** MySQL 옵티마이저가 **파티션 프루닝을 적용하지 못했고**, 성능 저하가 발생했음 이를 `=` 조건으로 바꾸면 프루닝이 적용되어 성능 향상이 가능할 것으로 예상
+
+2. 그러나 EXPLAIN 키워드를 붙여 예상되는 파티션 이용 항목을 확인한 결과, 여전히 파티션 프루닝이 적용되지 않았다.
+```sql
+-- 파티션 확인 코드
+EXPLAIN
+SELECT m.title AS 제목, ROUND(AVG(r.rating), 2) AS 평점
+FROM movies m
+JOIN ratings_partitioned_by_movieId r ON r.movieId = m.movieId
+WHERE m.title = 'Toy Story (1995)'
+GROUP BY m.title;
+```
+![위의 sql확인시 partitions에 모든 파티션 항목이 들어가 있는 걸 확인하는 이미지파일]()
+
+#### 👏 2차로 찾은 원인
+
+1. ratings_partitioned_by_movieId 테이블은 movieId 기준으로 파티셔닝 되어있고, 조인 조건이 r.movieId = m.movieId 이다. 그런데 WHERE 조건은 m.title = 'Toy Story (1995)' 로, movieId 조건이 직접 없다.
+```sql
+-- 문제 있었던 쿼리
+WHERE m.title LIKE('Toy Story');   -- 프루닝 불가 ❌
+  
+-- 성능 개선을 위한 수정
+WHERE WHERE m.movieId = 1;         -- 프루닝 가능 ✅
+```
+  
+3. 따라서 movieId를 직접 지정한 경우에 파티션 푸르닝이 발생한다.
+```sql
+--- 파티션 코드 확인
+EXPLAIN
+SELECT m.title AS 제목, ROUND(AVG(r.rating), 2) AS 평점
+FROM movies m
+JOIN ratings_partitioned_by_movieId r ON r.movieId = m.movieId
+WHERE m.movieId = 1;
+GROUP BY m.title;
+```
+![위의 sql확인시 partitions에 일부 파티션 항목이 들어가 있는 걸 확인하는 이미지파일]()
+
+#### 👏 3차로 찾은 원인
+
+잠시 테이블 생성 쿼리를 가져오겠다.
+```sql
+CREATE TABLE ratings (
+ userId INT,
+ movieId INT,
+ rating FLOAT,
+ timestamp BIGINT
+);
+
+CREATE TABLE ratings_partitioned_by_userId (
+  userId INT,
+  movieId INT,
+  rating FLOAT,
+  timestamp BIGINT,
+  PRIMARY KEY (userId, movieId)
+)
+PARTITION BY HASH(userId)
+PARTITIONS 5;
+```
+
+1. 위의 테이블을 비교하면 파티션 뿐만 아니라 기본키를 지정하였다. 기본키를 지정시 다음과 같은 작업을 한다
+  - MySQL / MariaDB: 기본키 지정 시 클러스터형 인덱스(Primary Key Index)를 자동 생성
+  - Oracle / PostgreSQL: UNIQUE 인덱스를 자동 생성
+  - SQL Server: 클러스터형 또는 넌클러스터형 인덱스를 자동 생성 (설정에 따라 다름)
+
+2. 따라서 1차 테스트에서 잘못된 파티셔닝 테이블과 ratings의 조회성능 차이는 인덱스 차이였다.
+
+### 🧪 3차 테스트
+
+#### 🏃 테스트 진행 
+
+기본 ratings 테이블에 pk를 추가하여 조회 성능을 확인해보고, movieId에 대한 단일 인덱스도 지정하여 join성능도 확인 해 보자
+
+사전 기대 결과
+> 기본 테이블 조회성능 향상(원인: 인덱스)
+> 처음에 예상했던 결과처럼 파티션키와 조회조건이 동일한 경우에 단일 검색 및 조인 조회 성능 향상 발생
+
+- 질의문
+  + 개선 전
+    ![기본 테이블에 pk지정 이전]()
+  + 개선 후
+    ![기본 테이블에 pk지정 이후]()
+
+- 질의문
+  + 개선 전
+    <img width="1591" height="530" alt="image" src="https://github.com/user-attachments/assets/ccbd1f3e-69aa-45f9-978b-09ec4cc8d8c3" />
+  + 개선 후
+    <img width="1587" height="171" alt="image" src="https://github.com/user-attachments/assets/069c4979-85c1-4cff-bc80-01e670cd1f70" />
+
+- 테스트 결과 요약
+  | 테스트 케이스         | 평균 실행 시간(초) | 최소(초)  | 최대(초)  | 비고  |
+  | --------------- | ----------- | ------ | ------ | --- |
+  | 파티셔닝 없음         | 0.000      | 0.000 | 0.000 | 개선이후 |
+  | movieId 해시 파티셔닝 | 0.000      | 0.000 | 0.000 | 개선이후 |
+  | rating 해시 파티셔닝  | 0.000      | 0.000 | 0.000 | 개선이후 |
+  | userId Range 파티셔닝  | 0.000      | 0.000 | 0.000 | 개선이후 |
+  
+  | 테스트 케이스         | 평균 실행 시간(초) | 최소(초)  | 최대(초)  | 비고  |
+  | --------------- | ----------- | ------ | ------ | --- |
+  | movieId 해시 파티셔닝 | 29.582      | 27.524 | 30.980 |  movieId 인덱스 추가 전   |
+  | movieId 해시 파티셔닝 | 2.544      | 2.215 | 3.676 |  movieId 인덱스 추가 후   |
+
+
+#### 📌 3차 결론
+
+1차 실험에서 예상했던 결과가 발생했다. 잘못된 파티셔닝은 오히려 시간이 오래걸렸다. 조인 성능 또한 인덱스 추가 및 쿼리문 수정을 통해 실행속도가 비약적으로 상승하였다.
+
+
+## 📌 결론 및 회고
+
+> 이번 프로젝트를 통해 파티셔닝이 항상 성능 향상을 보장하는 만능 해결책이 아니라는 점을 명확히 알 수 있었습니다. 초기 테스트에서는 파티셔닝 자체의 효과보다 기본 키 생성에 따른 인덱스 효과가 성능에 더 큰 영향을 미쳤다는 점을 발견했습니다. 이는 실험 환경을 정확히 통제하는 것의 중요성을 깨닫게 된 계기가 되었습니다.
+
+> 가장 핵심적인 성능 향상 요인은 '파티션 프루닝'이었으며, 이를 위해서는 조회 조건에 파티션 키를 명시적으로 사용하는 것이 필수적이었습니다. `EXPLAIN`을 통해 쿼리 실행 계획을 분석하며, 조인 쿼리에서 옵티마이저가 파티션을 제대로 활용하도록 유도하는 것이 얼마나 중요한지 체감할 수 있었습니다.
+
+> 결론적으로, 파티셔닝은 쿼리와 데이터 접근 패턴에 대한 깊은 이해를 바탕으로 신중하게 설계될 때 비로소 강력한 성능 개선 도구가 될 수 있다는 것을 배웠습니다. 이론으로만 알던 지식을 직접 실험하고 검증하며 데이터베이스 성능 최적화에 대한 실질적인 경험을 쌓을 수 있었던 의미 있는 프로젝트였습니다.
+
