@@ -111,7 +111,7 @@ sudo apt update
 sudo apt install mysql-client
 ```
 
-💡 mysqlslab 설치 이유<br>
+💡 mysqlslap 설치 이유<br>
 **가상의 사용자가 동일한 쿼리를 반복 실행하는 상황에서의 평균 성능을 측정**하고자 하였다.
 mysqlslap은 동시 접속과 반복 실행을 통한 부하 테스트가 가능하여,
 파티셔닝 전후 성능을 객관적으로 비교하기 위한 벤치마크 도구로 적합하다고 판단했다.
