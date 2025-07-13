@@ -37,7 +37,7 @@ MovieReview Dataset (https://grouplens.org/datasets/movielens/)
 - <Strong> 데이터셋 선정 이유 </Strong><br>
 여러 리뷰 페이지에서 수많은 상품 리뷰가 **빠르게 조회**되는 이유가 궁금해 성능 향상 기법을 조사하던 중,
 리뷰 데이터가 풍부한 영화 데이터를 활용해 실습해보기로 결정했습니다.
-**각 영화에 대한 여러 유저의 평점 평균**을 통해 손쉽게 인기 있는 영화를 확인할 수 있도록 구현하는 것이 목표입니다
+**각 영화에 대한 여러 유저의 평점 평균**을 조회해보면서 실제 서비스 환경에서 성능 개선이 어떻게 이루어지는지를 직접 체감해보고자 했습니다.
 <br>
 
 <strong> 테이블 구조 설계 </strong> <br>
@@ -74,7 +74,7 @@ DBeaver에서 데이터셋을 자동 improt 하며 오류 발생
 <br>
 <img width="300" height="200" alt="image (2)" src="https://github.com/user-attachments/assets/ed45b931-5e53-4f6e-9f3e-23bf032abd03" />
 <br>
-💡 원인
+💡 원인<br>
 Vachar(50)인 genres와 timestamp의 데이터가 테이블의 제약조건보다 길이가 길어 오류 발생<br>
 <img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/561553d1-0fac-4b69-a42e-eede397d0d4e" />
 
@@ -177,7 +177,9 @@ A.<br>
   ```
 
 - **파티셔닝 후**<br>
-  **1. Hash Partitioning (movieId 기준)**  
+> 어떤 컬럼을 기준으로 파티셔닝 하느냐에 따라서 성능이 어떻게 달라지는지 확인하기 위해, movieId, userId, rating 각각을 기준으로 파티셔닝을 적용하였다.<br>
+
+  **1. movieId 기준 파티셔닝(Hash Partitioning)**  
   ```sql
   CREATE TABLE ratings_partitioned_by_movieId (
     userId INT,
@@ -191,7 +193,7 @@ A.<br>
   ```
     
 
-  **2. userId 기준 파티셔닝 (Range 또는 Hash)**  
+  **2. userId 기준 파티셔닝 (Hash Partitioning)**  
   ```sql
   CREATE TABLE ratings_partitioned_by_userId (
     userId INT,
@@ -204,7 +206,7 @@ A.<br>
   PARTITIONS 5;
   ```
   
-  **3. rating 값 기준 파티셔닝**  
+  **3. rating 값 기준 파티셔닝 (Range Partitioning)**  
   ```sql
   CREATE TABLE ratings_partitioned_by_rating (
     userId INT,
@@ -229,10 +231,10 @@ A.<br>
 **각 영화에 대한 여러 유저의 평점 평균**을 조회하기 위해서는 movidId로 GroupBy하여 질의하므로, 파티셔닝 또한 movidId를 파티션키로 설정하는 것이 성능 향상에 도움이 될 것이라 예상하였다.<br>
 
 사전 기대 결과
-> 파티션키와 select절의 where조건이 동일해야만 성능 개선이 될 것이라 예상했다.
-> 파티션키와 조회조건이 다를 경우 불필요한 해시 과정등이 발생하여 조회성능은 오히려 느려질 것이라 생각했다.
-
-  1. 파티셔닝❌
+> 파티션키가 select문에서 where조건에 사용될 때만 성능 개선이 나타날 것이라고 예상했다.
+> 반대로, 파티션키와 조회조건이 다를 경우 불필요한 파티션 접근과 추가 연산 발생하여 오히려 성능이 저하될 수 있다고 생각했다.
+<br>
+ 1. 파티셔닝❌
   <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
   2. movieId(Hash)
   <img width="1585" height="195" alt="image (1)" src="https://github.com/user-attachments/assets/6ff23e2f-ea3a-4b0b-bf76-a4dedd0b7b4c" />
@@ -314,7 +316,7 @@ movieId 해시 파티셔닝 테이블에서 성능 향상이 발생하지 않은
 
 AI를 활용하여 빠르게 문제를 인지하였다.
 
-Q1. mysql에서 파티셔닝을 한 테이블과 일반 테이블과의 조인에서 고려해야 할 사항이 있을까?
+<strong>Q1. mysql에서 파티셔닝을 한 테이블과 일반 테이블과의 조인에서 고려해야 할 사항이 있을까?</strong>
 
 A.<br>
 ✅ 1. 파티션 프루닝(Partition Pruning)이 불가능할 수 있음
@@ -328,7 +330,7 @@ A.<br>
 ✅ 4. 파티션 키와 조인 키가 다르면 성능저하 가능성 있음
 - 일반 테이블과 조인 시, 조인 키 ≠ 파티션 키인 경우, 불필요한 파티션 접근이 늘어나고 해시 리디스트리뷰션이 일어날 수 있어 성능이 떨어질 수 있습니다.
 
-Q2. 파티션 푸르닝이 안되는 이유에는 뭐가있을까?
+**Q2. 파티션 푸르닝이 안되는 이유에는 뭐가있을까?**
 
 A. LIKE, BETWEEN, IN 등의 조건 사용 (일부 경우)
 - LIKE는 패턴 매칭이라 정적인 값이 아님
@@ -363,7 +365,7 @@ WHERE m.title LIKE('Toy Story');   -- 프루닝 불가 ❌
 WHERE m.movieId = 1;         -- 프루닝 가능 ✅
 ```
   
-3. 따라서 movieId를 직접 지정한 경우에 파티션 푸르닝이 발생한다.
+2. 따라서 movieId를 직접 지정한 경우에 파티션 푸르닝이 발생한다.
 ```sql
 --- 파티션 코드 확인
 EXPLAIN
