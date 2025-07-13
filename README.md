@@ -1,4 +1,4 @@
-## 🎯 프로젝트 목표
+리## 🎯 프로젝트 목표
 
 파티셔닝 적용 전후의 **조회 성능 차이를 비교 분석**하고,  
 **파티셔닝이 실제로 성능 개선에 얼마나 효과적인지 실험적으로 확인**하는 것을 최종 목표로 합니다.
@@ -235,13 +235,13 @@ A.<br>
 > 반대로, 파티션키와 조회조건이 다를 경우 불필요한 파티션 접근과 추가 연산 발생하여 오히려 성능이 저하될 수 있다고 생각했다.
 <br>
  1. 파티셔닝❌
-  <img width="1544" height="164" alt="image (3)" src="https://github.com/user-attachments/assets/4447bbee-440e-45da-b9aa-77583bcde8b5" />
+  <img width="1587" height="170" alt="Image" src="https://github.com/user-attachments/assets/96f81bf8-c218-403e-b17b-7893738cbd42" />
   2. movieId(Hash)
-  <img width="1585" height="195" alt="image (1)" src="https://github.com/user-attachments/assets/6ff23e2f-ea3a-4b0b-bf76-a4dedd0b7b4c" />
+  <img width="1590" height="297" alt="Image" src="https://github.com/user-attachments/assets/ccff7b75-c1c4-4894-838c-0cb5369312f8" />
   3. userId(Hash)
-  <img width="1581" height="194" alt="image (2)" src="https://github.com/user-attachments/assets/a7d16200-9f06-4de3-b10e-b0eb9fe3e003" />
+  <img width="1587" height="263" alt="Image" src="https://github.com/user-attachments/assets/3e3a4838-a4d8-42ca-8918-bdaa999725eb" />
   4. rating(Range)
-  <img width="1589" height="198" alt="image" src="https://github.com/user-attachments/assets/f454d41a-5d70-4347-bcbe-8388014dff94" />
+  <img width="1587" height="217" alt="Image" src="https://github.com/user-attachments/assets/aed91d77-e045-4797-b256-cb0739312286" />
 
 - 테스트 결과 요약
   | 테스트 케이스            | 평균 실행 시간(초) | 최소(초) | 최대(초) | 비고                   |
@@ -352,7 +352,7 @@ JOIN ratings_partitioned_by_movieId r ON r.movieId = m.movieId
 WHERE m.title = 'Toy Story (1995)'
 GROUP BY m.title;
 ```
-![위의 sql확인시 partitions에 모든 파티션 항목이 들어가 있는 걸 확인하는 이미지파일]()
+<img width="976" height="350" alt="Image" src="https://github.com/user-attachments/assets/47c71149-7c7c-4afe-8c5f-4a7d2baf25ad" />
 
 #### 👏 2차로 찾은 원인
 
@@ -376,7 +376,7 @@ JOIN ratings_partitioned_by_movieId r ON r.movieId = m.movieId
 WHERE m.movieId = 1;
 GROUP BY m.title;
 ```
-![위의 sql확인시 partitions에 일부 파티션 항목이 들어가 있는 걸 확인하는 이미지파일]()
+<img width="917" height="395" alt="Image" src="https://github.com/user-attachments/assets/13674daf-ee0a-4697-acc4-edadd068a1c0" />
 
 #### 👏 3차로 찾은 원인
 
@@ -421,15 +421,16 @@ PARTITIONS 5;
 
 - 질의문
   + 개선 전
-    ![기본 테이블에 pk지정 이전]()
+    <img width="1587" height="170" alt="Image" src="https://github.com/user-attachments/assets/a0d0bd90-0046-4a4c-8dc1-9dd863596c98" />
   + 개선 후
-    ![기본 테이블에 pk지정 이후]()
+    <img width="1583" height="170" alt="Image" src="https://github.com/user-attachments/assets/416af0a2-2742-4c90-8b34-09f98f2b81b6" />
 
 - 질의문
   + 개선 전
     <img width="1591" height="530" alt="image" src="https://github.com/user-attachments/assets/ccbd1f3e-69aa-45f9-978b-09ec4cc8d8c3" />
+    <img width="1587" height="180" alt="Image" src="https://github.com/user-attachments/assets/62b2af73-0bff-4a80-b2b0-d0011ac8b28a" />
   + 개선 후
-    <img width="1587" height="171" alt="image" src="https://github.com/user-attachments/assets/069c4979-85c1-4cff-bc80-01e670cd1f70" />
+    <img width="1591" height="708" alt="Image" src="https://github.com/user-attachments/assets/64dceafe-0c07-46a0-a63b-0255c09cefb2" />
 
 - 테스트 결과 요약
   | 테스트 케이스         | 평균 실행 시간(초) | 최소(초)  | 최대(초)  | 비고  |
