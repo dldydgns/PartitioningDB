@@ -430,7 +430,9 @@ PARTITIONS 5;
     <img width="1591" height="530" alt="image" src="https://github.com/user-attachments/assets/ccbd1f3e-69aa-45f9-978b-09ec4cc8d8c3" />
     
   + 개선 후
-    <img width="1271" height="431" alt="Image" src="https://github.com/user-attachments/assets/0f61485a-faaf-41f1-af53-3e1540dd3fdf" />
+    <img width="1581" height="171" alt="image" src="https://github.com/user-attachments/assets/1cbe7c1b-e1f8-4f36-b0d0-57239fd7d3aa" />
+    <img width="1016" height="223" alt="image" src="https://github.com/user-attachments/assets/46b062eb-8d99-4182-83ef-4f3a1d001ab9" />
+
 
 - 테스트 결과 요약
   | 테스트 케이스         | 평균 실행 시간(초) | 최소(초)  | 최대(초)  | 비고  |
