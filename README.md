@@ -1,4 +1,4 @@
-## 🎯 프로젝트 목표
+<img width="1589" height="715" alt="image" src="https://github.com/user-attachments/assets/e4a95508-67e1-42ef-a1ff-9f7410ce06ca" />## 🎯 프로젝트 목표
 
 파티셔닝 적용 전후의 **조회 성능 차이를 비교 분석**하고,  
 **파티셔닝이 실제로 성능 개선에 얼마나 효과적인지 실험적으로 확인**하는 것을 최종 목표로 합니다.
@@ -430,7 +430,7 @@ PARTITIONS 5;
     <img width="1591" height="530" alt="image" src="https://github.com/user-attachments/assets/ccbd1f3e-69aa-45f9-978b-09ec4cc8d8c3" />
     
   + 개선 후
-    <img width="1591" height="708" alt="Image" src="https://github.com/user-attachments/assets/64dceafe-0c07-46a0-a63b-0255c09cefb2" />
+    <img width="1589" height="715" alt="Image" src="https://github.com/user-attachments/assets/8e9fce38-eacd-43d0-a114-507ac2c0b377" />
 
 - 테스트 결과 요약
   | 테스트 케이스         | 평균 실행 시간(초) | 최소(초)  | 최대(초)  | 비고  |
