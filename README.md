@@ -421,29 +421,28 @@ PARTITIONS 5;
 
 - 질의문
   + 개선 전
-    <img width="1587" height="170" alt="Image" src="https://github.com/user-attachments/assets/a0d0bd90-0046-4a4c-8dc1-9dd863596c98" />
-  + 개선 후
     <img width="1583" height="170" alt="Image" src="https://github.com/user-attachments/assets/416af0a2-2742-4c90-8b34-09f98f2b81b6" />
+  + 개선 후
+    <img width="1587" height="170" alt="Image" src="https://github.com/user-attachments/assets/a0d0bd90-0046-4a4c-8dc1-9dd863596c98" />
 
 - 질의문
   + 개선 전
-    <img width="1591" height="530" alt="image" src="https://github.com/user-attachments/assets/ccbd1f3e-69aa-45f9-978b-09ec4cc8d8c3" />
-    <img width="1587" height="180" alt="Image" src="https://github.com/user-attachments/assets/62b2af73-0bff-4a80-b2b0-d0011ac8b28a" />
+  <img width="1272" height="428" alt="Image" src="https://github.com/user-attachments/assets/67a3274f-da6a-4e34-920c-b0befc9c997d" />
+    
   + 개선 후
     <img width="1591" height="708" alt="Image" src="https://github.com/user-attachments/assets/64dceafe-0c07-46a0-a63b-0255c09cefb2" />
 
 - 테스트 결과 요약
   | 테스트 케이스         | 평균 실행 시간(초) | 최소(초)  | 최대(초)  | 비고  |
   | --------------- | ----------- | ------ | ------ | --- |
-  | 파티셔닝 없음         | 0.000      | 0.000 | 0.000 | 개선이후 |
-  | movieId 해시 파티셔닝 | 0.000      | 0.000 | 0.000 | 개선이후 |
-  | rating 해시 파티셔닝  | 0.000      | 0.000 | 0.000 | 개선이후 |
-  | userId Range 파티셔닝  | 0.000      | 0.000 | 0.000 | 개선이후 |
+  | 파티셔닝 없음         | 72.793      | 69.514 | 78.860 | 개선이후 |
+  | movieId 해시 파티셔닝 | 29.582      | 27.524 | 38.980 | 개선이후 |
+  | rating 해시 파티셔닝  | 28.837      | 28.741 | 28.953 | 개선이후 |
   
   | 테스트 케이스         | 평균 실행 시간(초) | 최소(초)  | 최대(초)  | 비고  |
   | --------------- | ----------- | ------ | ------ | --- |
-  | movieId 해시 파티셔닝 | 29.582      | 27.524 | 30.980 |  movieId 인덱스 추가 전   |
-  | movieId 해시 파티셔닝 | 2.544      | 2.215 | 3.676 |  movieId 인덱스 추가 후   |
+  | movieId 해시 파티셔닝 | 28.879      | 28.603 | 29.226 |  movieId 인덱스 추가 전   |
+  | movieId 해시 파티셔닝 | 10.487      | 10.269 | 10.850 |  movieId 인덱스 추가 후   |
 
 
 #### 📌 3차 결론
