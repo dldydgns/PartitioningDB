@@ -427,7 +427,7 @@ PARTITIONS 5;
 
 - 질의문
   + 개선 전
-  <img width="1272" height="428" alt="Image" src="https://github.com/user-attachments/assets/67a3274f-da6a-4e34-920c-b0befc9c997d" />
+    <img width="1591" height="530" alt="image" src="https://github.com/user-attachments/assets/ccbd1f3e-69aa-45f9-978b-09ec4cc8d8c3" />
     
   + 개선 후
     <img width="1591" height="708" alt="Image" src="https://github.com/user-attachments/assets/64dceafe-0c07-46a0-a63b-0255c09cefb2" />
